@@ -1,465 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskMaster Pro</title>
-  <style>
-    :root {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --bg-card: #334155;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent-blue: #38bdf8;
-      --accent-green: #4ade80;
-      --accent-red: #f87171;
-      --accent-amber: #fbbf24;
-      --border-color: #475569;
-      --radius: 10px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO BIN | Edge Command Center</title>
+    <!-- Firebase SDK (Compat version for rapid prototyping) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #059669;
+            --bg-base: #f3f4f6;
+            --surface: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-base); color: var(--text-main); padding: 20px; }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        header h1 { color: var(--primary); font-size: 1.5rem; display: flex; align-items: center; gap: 10px;}
+        .status-badge {
+            background: #fee2e2;
+            color: var(--danger);
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-badge::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: var(--danger);
+            border-radius: 50%;
+        }
 
-    [data-theme="light"] {
-      --bg-primary: #f1f5f9;
-      --bg-secondary: #ffffff;
-      --bg-card: #f8fafc;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --accent-blue: #0284c7;
-      --accent-green: #16a34a;
-      --accent-red: #dc2626;
-      --accent-amber: #d97706;
-      --border-color: #e2e8f0;
-    }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-    }
+        .card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .card h2 { font-size: 1.125rem; margin-bottom: 16px; color: var(--text-muted); border-bottom: 2px solid var(--bg-base); padding-bottom: 8px;}
 
-    body {
-      background-color: var(--bg-primary);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+        /* ML Prototype UI */
+        .ml-vision-box {
+            width: 100%;
+            height: 250px;
+            background: #111827;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #4b5563;
+            border: 2px dashed #374151;
+            position: relative;
+        }
+        .ml-vision-box p { margin-top: 10px; font-family: monospace; }
+        .bounding-box-placeholder {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid var(--primary);
+            opacity: 0.2;
+        }
 
-    header {
-      background-color: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+        .data-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 15px;
+            transition: opacity 0.2s;
+        }
+        .btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+        .btn:hover:not(:disabled) { opacity: 0.9; }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent-blue);
-    }
-
-    .theme-toggle-btn {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      width: 100%;
-      flex: 1;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .stat-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      text-align: center;
-    }
-
-    .stat-card .number {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-top: 0.25rem;
-    }
-
-    .controls-panel {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .task-form {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .task-form input[type="text"] {
-      flex: 1;
-      min-width: 200px;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      background-color: var(--bg-card);
-      color: var(--text-main);
-      outline: none;
-    }
-
-    .task-form select {
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      background-color: var(--bg-card);
-      color: var(--text-main);
-      cursor: pointer;
-    }
-
-    button.btn-primary {
-      background-color: var(--accent-blue);
-      color: #ffffff;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--radius);
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    button.btn-primary:hover {
-      opacity: 0.9;
-    }
-
-    .filter-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-color);
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .filter-group {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .filter-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      padding: 0.4rem 0.8rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .filter-btn.active {
-      background-color: var(--bg-card);
-      color: var(--accent-blue);
-    }
-
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .task-item {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .task-item.completed .task-text {
-      text-decoration: line-through;
-      color: var(--text-muted);
-    }
-
-    .task-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      flex: 1;
-    }
-
-    .task-checkbox {
-      width: 1.2rem;
-      height: 1.2rem;
-      cursor: pointer;
-      accent-color: var(--accent-blue);
-    }
-
-    .task-text {
-      font-size: 1rem;
-      word-break: break-word;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.6rem;
-      border-radius: 20px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge-high { background-color: rgba(248, 113, 113, 0.2); color: var(--accent-red); }
-    .badge-medium { background-color: rgba(251, 191, 36, 0.2); color: var(--accent-amber); }
-    .badge-low { background-color: rgba(74, 222, 128, 0.2); color: var(--accent-green); }
-
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.4rem;
-      border-radius: 4px;
-    }
-
-    .delete-btn:hover {
-      color: var(--accent-red);
-      background-color: var(--bg-card);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: var(--text-muted);
-      background-color: var(--bg-secondary);
-      border: 1px dashed var(--border-color);
-      border-radius: var(--radius);
-    }
-  </style>
+        .log-box {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            height: 150px;
+            font-family: monospace;
+            font-size: 0.875rem;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <span>⚡</span> TaskMaster
-    </div>
-    <button class="theme-toggle-btn" id="themeToggle">
-      <span id="themeIcon">🌙</span> <span id="themeText">Dark</span>
-    </button>
-  </header>
+    <header>
+        <h1>♻️ ECO BIN | CPCB EPR Dashboard</h1>
+        <div class="status-badge" id="conn-status">STM32 Hardware Offline</div>
+    </header>
 
-  <main class="container">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div>Total Tasks</div>
-        <div class="number" id="statTotal">0</div>
-      </div>
-      <div class="stat-card">
-        <div>Pending</div>
-        <div class="number" style="color: var(--accent-amber);" id="statPending">0</div>
-      </div>
-      <div class="stat-card">
-        <div>Completed</div>
-        <div class="number" style="color: var(--accent-green);" id="statCompleted">0</div>
-      </div>
-    </div>
-
-    <section class="controls-panel">
-      <form class="task-form" id="taskForm">
-        <input type="text" id="taskInput" placeholder="Add a new task..." required autocomplete="off">
-        <select id="prioritySelect">
-          <option value="low">Low Priority</option>
-          <option value="medium" selected>Medium Priority</option>
-          <option value="high">High Priority</option>
-        </select>
-        <button type="submit" class="btn-primary">Add Task</button>
-      </form>
-
-      <div class="filter-bar">
-        <div class="filter-group">
-          <button class="filter-btn active" data-filter="all">All</button>
-          <button class="filter-btn" data-filter="pending">Pending</button>
-          <button class="filter-btn" data-filter="completed">Completed</button>
+    <div class="dashboard-grid">
+        
+        <!-- ML Vision Prototype Card -->
+        <div class="card" style="grid-column: span 2;">
+            <h2>CNN Edge Vision Classifier (Prototype)</h2>
+            <div class="ml-vision-box" id="vision-feed">
+                <div class="bounding-box-placeholder"></div>
+                <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"></path></svg>
+                <p>Awaiting OV2640 Camera Feed...</p>
+            </div>
+            <button class="btn" id="trigger-ml" onclick="runInference()">Run Material Inference</button>
         </div>
-      </div>
-    </section>
 
-    <div class="task-list" id="taskList"></div>
-  </main>
-
-  <script>
-    // App State
-    let tasks = JSON.parse(localStorage.getItem('tm_tasks')) || [];
-    let currentFilter = 'all';
-    let currentTheme = localStorage.getItem('tm_theme') || 'dark';
-
-    // DOM Elements
-    const taskForm = document.getElementById('taskForm');
-    const taskInput = document.getElementById('taskInput');
-    const prioritySelect = document.getElementById('prioritySelect');
-    const taskList = document.getElementById('taskList');
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const themeToggleBtn = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    const themeText = document.getElementById('themeText');
-
-    // Stats Elements
-    const statTotal = document.getElementById('statTotal');
-    const statPending = document.getElementById('statPending');
-    const statCompleted = document.getElementById('statCompleted');
-
-    // Initialize Theme
-    function applyTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      if (theme === 'light') {
-        themeIcon.textContent = '☀️';
-        themeText.textContent = 'Light';
-      } else {
-        themeIcon.textContent = '🌙';
-        themeText.textContent = 'Dark';
-      }
-      localStorage.setItem('tm_theme', theme);
-    }
-    applyTheme(currentTheme);
-
-    themeToggleBtn.addEventListener('click', () => {
-      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      applyTheme(currentTheme);
-    });
-
-    // Save tasks to LocalStorage
-    function saveTasks() {
-      localStorage.setItem('tm_tasks', JSON.stringify(tasks));
-      updateStats();
-      renderTasks();
-    }
-
-    // Update Dashboard Metrics
-    function updateStats() {
-      const total = tasks.length;
-      const completed = tasks.filter(t => t.completed).length;
-      const pending = total - completed;
-
-      statTotal.textContent = total;
-      statPending.textContent = pending;
-      statCompleted.textContent = completed;
-    }
-
-    // Add Task
-    taskForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const text = taskInput.value.trim();
-      if (!text) return;
-
-      const newTask = {
-        id: Date.now().toString(),
-        text: text,
-        priority: prioritySelect.value,
-        completed: false,
-        createdAt: new Date()
-      };
-
-      tasks.unshift(newTask);
-      saveTasks();
-
-      taskInput.value = '';
-      prioritySelect.value = 'medium';
-    });
-
-    // Toggle Complete Status
-    function toggleTask(id) {
-      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-      saveTasks();
-    }
-
-    // Delete Task
-    function deleteTask(id) {
-      tasks = tasks.filter(t => t.id !== id);
-      saveTasks();
-    }
-
-    // Filter Buttons Listener
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        renderTasks();
-      });
-    });
-
-    // Render Tasks to DOM
-    function renderTasks() {
-      const filteredTasks = tasks.filter(t => {
-        if (currentFilter === 'pending') return !t.completed;
-        if (currentFilter === 'completed') return t.completed;
-        return true;
-      });
-
-      if (filteredTasks.length === 0) {
-        taskList.innerHTML = `
-          <div class="empty-state">
-            <p>No tasks found.</p>
-          </div>
-        `;
-        return;
-      }
-
-      taskList.innerHTML = filteredTasks.map(task => `
-        <div class="task-item ${task.completed ? 'completed' : ''}">
-          <div class="task-left">
-            <input 
-              type="checkbox" 
-              class="task-checkbox" 
-              ${task.completed ? 'checked' : ''} 
-              onchange="toggleTask('${task.id}')"
-            >
-            <span class="task-text">${escapeHtml(task.text)}</span>
-            <span class="badge badge-${task.priority}">${task.priority}</span>
-          </div>
-          <button class="delete-btn" onclick="deleteTask('${task.id}')" title="Delete Task">
-            ✕
-          </button>
+        <!-- Sensor Fusion Data Card -->
+        <div class="card">
+            <h2>Real-time Sensor Telemetry</h2>
+            <div style="margin-bottom: 20px;">
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Gravimetric Load (HX711)</p>
+                <div class="data-display">-- g</div>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Inductive Resonance (SN04-N)</p>
+                <div class="data-display">-- %</div>
+            </div>
         </div>
-      `).join('');
-    }
 
-    // Helper: Escape HTML string
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.innerText = str;
-      return div.innerHTML;
-    }
+        <!-- UPI & EPR Ledger Card -->
+        <div class="card">
+            <h2>UPI Micro-Settlement & EPR Ledger</h2>
+            <div style="margin-bottom: 20px;">
+                <p style="color: var(--text-muted); font-size: 0.875rem;">Estimated Scrap Value</p>
+                <div class="data-display" style="color: var(--warning);">₹ 0.00</div>
+            </div>
+            <button class="btn" disabled>Disburse UPI Payment</button>
+        </div>
 
-    // Initial Render
-    updateStats();
-    renderTasks();
-  </script>
+        <!-- System Logs -->
+        <div class="card" style="grid-column: span 2;">
+            <h2>Live System Console (MQTT / Firebase)</h2>
+            <div class="log-box" id="sys-logs">
+                > [INIT] Firebase Web SDK loaded.<br>
+                > [AUTH] Anonymous observer authenticated.<br>
+                > [NODE_SYNC] Attempting to reach STM32 Node [ID: PLP-ECO-01]...<br>
+                <span style="color: #ef4444;">> [ERROR] Connection Timeout. Physical kiosk offline or cellular modem unreachable.</span><br>
+                > [SYS] Entering standby mode. Awaiting physical hardware interrupt.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Firebase Configuration (Dummy credentials for presentation safety)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUMMY_KEY_FOR_PROTOTYPE",
+            authDomain: "ecobin-epr-prototype.firebaseapp.com",
+            databaseURL: "https://ecobin-epr-prototype-default-rtdb.firebaseio.com",
+            projectId: "ecobin-epr-prototype",
+            storageBucket: "ecobin-epr-prototype.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
+
+        // Initialize Firebase (wrapped in try/catch to fail gracefully for the demo)
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.database();
+            
+            // Simulating listening to an empty/offline hardware node
+            const hardwareRef = db.ref('kiosks/node_01/sensors');
+            hardwareRef.on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    appendLog("[DB] No telemetry data found in cloud ledger.");
+                }
+            });
+        } catch (e) {
+            appendLog("[FIREBASE] Initialized in offline mock mode.");
+        }
+
+        // ML Prototype Interaction
+        function runInference() {
+            const btn = document.getElementById('trigger-ml');
+            btn.innerHTML = "Processing...";
+            btn.disabled = true;
+            
+            appendLog("[ML_INFERENCE] Requesting image buffer from Edge PC...");
+            
+            setTimeout(() => {
+                appendLog("<span style='color: #ef4444;'>[ML_INFERENCE_FAIL] Err: Camera sensor (OV2640) unresponsive. Check physical I2C/SPI lines.</span>");
+                btn.innerHTML = "Run Material Inference";
+                btn.disabled = false;
+            }, 1200);
+        }
+
+        function appendLog(msg) {
+            const logBox = document.getElementById('sys-logs');
+            logBox.innerHTML += `<br>> ${msg}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    </script>
 </body>
 </html>
